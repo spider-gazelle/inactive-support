@@ -1,0 +1,9 @@
+name: inactive-support
+version: 0.1.0
+
+authors:
+  - Kim Burgess <kim@place.technology>
+
+crystal: 0.34.0
+
+license: MIT
