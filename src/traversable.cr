@@ -3,25 +3,49 @@ require "yaml"
 
 # The `Traversable` module is a mixin that provides tools for working with
 # nested structures of arbitrary depth.
-module Traversable(K, V)
+#
+# NOTE: `A` and `B` intentially chosen as type vars in place of the more
+# reasonable `K` and `V` as a workaround for
+# https://github.com/crystal-lang/crystal/issues/9488
+module Traversable(A, B)
   # Must yield this structure's key, value or index, element pairs.
-  abstract def each_pair(&block : {K, V} ->) : Nil
+  abstract def each_pair(&block : {A, B} ->) : Nil
 
-  # Traverse the structure depth first yielding a tuple of the path through the
-  # structure and the leaf value for every element to the passed block.
-  #
-  # The paths contain a tuple of the keys or indicies used across intermediate
-  # structures, similar to what would be passed to the `#dig` method.
-  def traverse(*prefix : *T, &block) : Nil forall T
-    each_pair do |(key, value)|
-      path = Tuple.new(*prefix, key)
-
-      if value.is_a? Traversable
-        value.traverse(*path) { |pair| yield pair }
-      else
-        yield({ path, value })
+  macro included
+    {% if B <= @type %}
+      def traverse(*prefix : *T, &block : {Indexable(Union(*T, A)), B} ->) : Nil forall T
+        traverse(prefix.to_a, &block)
       end
-    end
+
+      def traverse(prefix : Array(T), &block : {Array(Union(T, A)), B} ->) : Nil forall T
+        each_pair do |(key, value)|
+          path = prefix.dup.as(Array(Union(T, A))) << key
+
+          if value.as_h? || value.as_a?
+            value.traverse(path, &block)
+          else
+            yield({ path, value })
+          end
+        end
+      end
+    {% else %}
+      # Traverse the structure depth first yielding a tuple of the path through the
+      # structure and the leaf value for every element to the passed block.
+      #
+      # The paths contain a tuple of the keys or indicies used across intermediate
+      # structures, similar to what would be passed to the `#dig` method.
+      def traverse(*prefix : *T, &block) : Nil forall T
+        each_pair do |(key, value)|
+          path = Tuple.new(*prefix, key)
+
+          if value.is_a? Traversable
+            value.traverse(*path) { |pair| yield pair }
+          else
+            yield({ path, value })
+          end
+        end
+      end
+    {% end %}
   end
 
   # Provides an Iterator that will traverse the structure.
@@ -31,7 +55,7 @@ module Traversable(K, V)
   # be rewritten to provide lazy parsing of the underlying structure when
   # possible.
   def traverse : Iterator
-    entries = [] of {K, V}
+    entries = [] of {A, B}
 
     traverse do |entry|
       entry_arr = Array(typeof(entry)).new 1, entry
@@ -74,22 +98,6 @@ struct JSON::Any
       value.each_pair { |k, v| yield({ k, v }) }
     end
   end
-
-  def traverse(*prefix : *T, &block : {Indexable(Union(*T, String, Int32)), JSON::Any} ->) : Nil forall T
-    traverse(prefix.to_a, &block)
-  end
-
-  def traverse(prefix : Array(T), &block : {Array(T | String | Int32), JSON::Any} ->) : Nil forall T
-    each_pair do |(key, value)|
-      path = prefix.dup.as(Array(T | String | Int32)) << key
-
-      if value.as_h? || value.as_a?
-        value.traverse(path, &block)
-      else
-        yield({ path, value })
-      end
-    end
-  end
 end
 
 struct YAML::Any
@@ -121,5 +129,5 @@ puts nested.traverse.to_a
 
 puts "---"
 JSON.parse(nested.to_json).each_pair { |e| puts typeof(e).to_s }
-JSON.parse(t.to_json).traverse([] of (Int32 | String)) { |p| puts p }
+JSON.parse(nested.to_json).traverse([] of (Int32 | String)) { |p| puts p }
 
