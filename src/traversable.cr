@@ -13,14 +13,20 @@ module Traversable(A, B)
 
   macro included
     {% if B <= @type %}
-      def traverse(*prefix : *T, &block : {Indexable(Union(*T, A)), B} ->) : Nil forall T
-        traverse(prefix.to_a, &block)
+      # Traverse a recursive type,
+      def traverse(&block : {Array(A), B} ->) : Nil forall T
+        path = [] of A
+        traverse(path, &block)
       end
 
-      def traverse(prefix : Array(T), &block : {Array(Union(T, A)), B} ->) : Nil forall T
-        each_pair do |(key, value)|
-          path = prefix.dup.as(Array(Union(T, A))) << key
+      def traverse(*prefix : *T, &block : {Array(Union(*T, A)), B} ->) : Nil forall T
+        path = prefix.to_a.as(Array(Union(*T, A)))
+        traverse(path, &block)
+      end
 
+      protected def traverse(prefix : Array(T), &block : {Array(T | A), B} ->) : Nil forall T
+        each_pair do |(key, value)|
+          path = prefix.dup.as(Array(T | A)) << key
           if value.as_h? || value.as_a?
             value.traverse(path, &block)
           else
@@ -37,7 +43,6 @@ module Traversable(A, B)
       def traverse(*prefix : *T, &block) : Nil forall T
         each_pair do |(key, value)|
           path = Tuple.new(*prefix, key)
-
           if value.is_a? Traversable
             value.traverse(*path) { |pair| yield pair }
           else
@@ -129,5 +134,5 @@ puts nested.traverse.to_a
 
 puts "---"
 JSON.parse(nested.to_json).each_pair { |e| puts typeof(e).to_s }
-JSON.parse(nested.to_json).traverse([] of (Int32 | String)) { |p| puts p }
+JSON.parse(nested.to_json).traverse { |p| puts p }
 
