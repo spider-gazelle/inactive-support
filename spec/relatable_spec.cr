@@ -78,7 +78,7 @@ describe Relatable do
 
       {% for type in {JSON, YAML} %}
         context {{type}} do
-          parsed = {{type}}.parse nested.to_json
+          parsed = {{type}}.parse nested.to_{{type.id.downcase}}
           parsed.traverse.to_h.should eq(flat)
         end
       {% end %}
