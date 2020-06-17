@@ -1,3 +1,6 @@
+require "json"
+require "yaml"
+
 # The `Relatable` module provides an interface and tools for working with
 # collections that map keys or indicies to values.
 #
@@ -15,32 +18,107 @@ module Relatable(X, Y)
     ItemIterator({X, Y}).new self
   end
 
-  # Traverse the structure depth first yielding a tuple of the path through the
-  # structure and the leaf value for every element to the passed block.
-  #
-  # The paths contain a tuple of the keys or indicies used across intermediate
-  # structures, similar to what would be passed to the `#dig` method.
-  def traverse(*prefix : *T, &block) : Nil forall T
-    each_pair do |(key, value)|
-      path = Tuple.new(*prefix, key)
-      if value.is_a? Relatable
-        value.traverse(*path) { |pair| yield pair }
-      else
-        yield({path, value})
-      end
-    end
+  # :nodoc:
+  protected def traversable? : Bool
+    # This must be overridden by recursive types to flag when recusion has
+    # reached the bottom of the available data.
+    {{ raise "`#traversable?` must be overriden in " + @type.stringify }}
   end
 
-  # Provide an iterator that may be used to traverse a nested structure.
-  def traverse(*prefix : *T) : Iterator forall T
-    each_pair.flat_map do |(key, value)|
-      path = Tuple.new(*prefix, key)
-      if value.is_a? Relatable
-        value.traverse(*path)
-      else
-        {path, value}
+  macro included
+    # Recursive types (such as `JSON::Any`) require some special handling.
+    # Unfortunately this involves bluring the path types from a Tuple down to an
+    # Array to avoid infinite expansion. Under most usage scenarios this should
+    # be relatively transparent to external users though.
+    {% if Y <= @type %}
+
+      # Traverse the structure depth first yielding a tuple of the path through
+      # the structure and the leaf value for every element to the passed block.
+      #
+      # The paths contain an Array of the keys or indicies used across
+      # intermediate structures, similar to what would be passed to `#dig`.
+      def traverse(&block : {Array(X), Y} ->) : Nil forall T
+        path = [] of X
+        traverse(path, &block)
       end
-    end
+
+      # :ditto:
+      def traverse(*prefix : *T, &block : {Array(Union(*T, X)), Y} ->) : Nil forall T
+        path = prefix.to_a.as(Array(Union(*T, X)))
+        traverse(path, &block)
+      end
+
+      # :nodoc:
+      protected def traverse(prefix : Array(T), &block : {Array(T | X), Y} ->) : Nil forall T
+        each_pair do |(key, value)|
+          path = prefix.dup.as(Array(T | X)) << key
+
+          if value.traversable?
+            value.traverse(path, &block)
+          else
+            yield({ path, value })
+          end
+        end
+      end
+
+      # Provides an Iterator that will traverse the structure.
+      def traverse : Iterator({Array(X), Y})
+        path = [] of X
+        traverse path
+      end
+
+      # :ditto:
+      def traverse2(*prefix : *T) : Iterator({Array(Union(*T, X)), Y}) forall T
+        path = prefix.to_a.as(Array(Union(*T, X)))
+        traverse path
+      end
+
+      # :nodoc:
+      protected def traverse(prefix : Array(T)) : Iterator({Array(T | X), Y}) forall T
+        # FIXME: the is supremely inefficient, a nasty lie, and a dirty hack...
+        # but works within the realms of the current type system / compiler.
+        # This should be rewritten to provide lazy parsing of the underlying
+        # structure when possible.
+        entries = [] of {Array(T | X), Y}
+        traverse do |entry|
+          entries = entries << entry
+        end
+        entries.each
+      end
+
+    {% else %}
+
+      # Traverse the structure depth first yielding a tuple of the path through
+      # the structure and the leaf value for every element to the passed block.
+      #
+      # The paths contain a tuple of the keys or indicies used across
+      # intermediate structures, similar to what would be passed to `#dig`.
+      def traverse(*prefix : *T, &block) : Nil forall T
+        each_pair do |(key, value)|
+          path = Tuple.new(*prefix, key)
+
+          if value.is_a? Relatable
+            value.traverse(*path) { |pair| yield pair }
+          else
+            yield({path, value})
+          end
+        end
+      end
+
+      # Provide an iterator that may be used to traverse a nested structure.
+      def traverse(*prefix : *T) : Iterator forall T
+        each_pair.flat_map do |(key, value)|
+          path = Tuple.new(*prefix, key)
+
+          if value.is_a? Relatable
+            value.traverse(*path)
+          else
+            {path, value}
+          end
+        end
+      end
+
+    {% end %}
   end
 
   private class ItemIterator(T)
@@ -76,7 +154,7 @@ struct NamedTuple(T)
   # FIXME: the co-domain should be a `Union(T.values)`, however this is not
   # expressable with the current compiler.
   # See: https://github.com/crystal-lang/crystal/issues/6757
-  include Relatable(Symbol, NoReturn)
+  include Relatable(Symbol, T)
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
@@ -96,5 +174,35 @@ class Hash(K, V)
 
   def each_pair : Iterator({K, V})
     each
+  end
+end
+
+struct JSON::Any
+  include Relatable(String | Int32, JSON::Any)
+
+  def each_pair(&block : {String | Int32, JSON::Any} ->) : Nil
+    if value = as_h? || as_a?
+      value.each_pair { |k, v| yield({k, v}) }
+    end
+  end
+
+  protected def traversable? : Bool
+    !(as_h? || as_a?).nil?
+  end
+end
+
+struct YAML::Any
+  include Relatable(String | Int32, YAML::Any)
+
+  def each_pair(&block : {String | Int32, YAML::Any} ->) : Nil
+    if value = as_a?
+      value.each_pair { |k, v| yield({k, v}) }
+    elsif value = as_h?
+      value.each_pair { |k, v| yield({k.to_s, v}) }
+    end
+  end
+
+  protected def traversable? : Bool
+    !(as_h? || as_a?).nil?
   end
 end

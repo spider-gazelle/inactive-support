@@ -66,5 +66,22 @@ describe Relatable do
       flattened = nested.traverse.to_h
       flattened.should eq(flat)
     end
+
+    it "supports recursive types" do
+      flat = {
+        ["a"]          => 42,
+        ["b", 0]       => "foo",
+        ["b", 1]       => "bar",
+        ["b", 2]       => "baz",
+        ["c", "hello"] => "world",
+      }
+
+      {% for type in {JSON, YAML} %}
+        context {{type}} do
+          parsed = {{type}}.parse nested.to_json
+          parsed.traverse.to_h.should eq(flat)
+        end
+      {% end %}
+    end
   end
 end
