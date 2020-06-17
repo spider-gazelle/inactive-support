@@ -19,32 +19,52 @@ describe Relatable do
       nested = {
         a: 42,
         b: [:foo, :bar, :baz],
-        c: {"hello" => "world"}
+        c: {"hello" => "world"},
       }
       array = [] of NoReturn
       nested.each_pair { |pair| array = array + Array.new(1, pair) }
       array.should eq(nested.to_a)
     end
+
+    it "provides an iterator when called without a block" do
+      context Array do
+        array = [:foo, :bar, :baz].each_pair.to_a
+        array.should eq([{0, :foo}, {1, :bar}, {2, :baz}])
+      end
+
+      context NamedTuple do
+        array = {a: 1, b: 2, c: 3}.each_pair.to_a
+        array.should eq([{:a, 1}, {:b, 2}, {:c, 3}])
+      end
+    end
   end
 
   describe "#traverse" do
+    nested = {
+      a: 42,
+      b: [:foo, :bar, :baz],
+      c: {"hello" => "world"},
+    }
+
+    flat = {
+      {:a}          => 42,
+      {:b, 0}       => :foo,
+      {:b, 1}       => :bar,
+      {:b, 2}       => :baz,
+      {:c, "hello"} => "world",
+    }
+
     it "yields tuples of path, value for nested structures" do
-      nested = {
-        a: 42,
-        b: [:foo, :bar, :baz],
-        c: {"hello" => "world"}
-      }
       flattened = {} of NoReturn => NoReturn
       nested.traverse do |(path, value)|
         flattened = flattened.merge({path => value})
       end
-      flattened.should eq({
-        {:a} => 42,
-        {:b, 0} => :foo,
-        {:b, 1} => :bar,
-        {:b, 2} => :baz,
-        {:c, "hello"} => "world"
-      })
+      flattened.should eq(flat)
+    end
+
+    it "provides an iterator of all leafs values in the nested structure" do
+      flattened = nested.traverse.to_h
+      flattened.should eq(flat)
     end
   end
 end
