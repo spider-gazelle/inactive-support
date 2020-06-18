@@ -18,11 +18,17 @@ module Relatable(X, Y)
     ItemIterator({X, Y}).new self
   end
 
-  # :nodoc:
-  protected def traversable? : Bool
-    # This must be overridden by recursive types to flag when recusion has
-    # reached the bottom of the available data.
-    {{ raise "`#traversable?` must be overriden in " + @type.stringify }}
+  # True is `self` is a nested structure.
+  def nested? : Bool
+    {% if Y <= @type %}
+      # This must be overridden by recursive types to flag when recusion has
+      # reached the bottom of the available data.
+      {{ raise "`#nested?` must be overriden in " + @type.stringify }}
+    {% elsif Y <= Relatable || Y.union? && Y.union_types.any? &.<= Relatable %}
+      true
+    {% else %}
+      false
+    {% end %}
   end
 
   macro included
@@ -53,7 +59,7 @@ module Relatable(X, Y)
         each_pair do |(key, value)|
           path = prefix.dup.as(Array(T | X)) << key
 
-          if value.traversable?
+          if value.nested?
             value.traverse(path, &block)
           else
             yield({ path, value })
@@ -186,7 +192,7 @@ struct JSON::Any
     end
   end
 
-  protected def traversable? : Bool
+  protected def nested? : Bool
     !(as_h? || as_a?).nil?
   end
 end
@@ -202,7 +208,7 @@ struct YAML::Any
     end
   end
 
-  protected def traversable? : Bool
+  protected def nested? : Bool
     !(as_h? || as_a?).nil?
   end
 end

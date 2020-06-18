@@ -39,6 +39,20 @@ describe Relatable do
     end
   end
 
+  describe "#nested?" do
+    it "returns false for a flat structure" do
+      [:foo, :bar, :baz].nested?.should be_false
+    end
+
+    it "returns to for a nested structure" do
+      [[:foo]].nested?.should be_true
+    end
+
+    it "returns true when only some elements are nested" do
+      {:foo, [1, 2, 3]}.nested?.should be_true
+    end
+  end
+
   describe "#traverse" do
     nested = {
       a: 42,
