@@ -1,5 +1,6 @@
 require "json"
 require "yaml"
+require "http"
 
 # The `Collection` module provides an interface and tools for working with any
 # collection type. This includes both index and key-based containers.
@@ -216,7 +217,7 @@ end
 struct JSON::Any
   include Collection(String | Int32, JSON::Any)
 
-  def each_pair(&block : {String | Int32, JSON::Any} ->) : Nil
+  def each_pair(&block) : Nil
     if value = as_h? || as_a?
       value.each_pair { |k, v| yield({k, v}) }
     end
@@ -230,7 +231,7 @@ end
 struct YAML::Any
   include Collection(String | Int32, YAML::Any)
 
-  def each_pair(&block : {String | Int32, YAML::Any} ->) : Nil
+  def each_pair(&block) : Nil
     if value = as_a?
       value.each_pair { |k, v| yield({k, v}) }
     elsif value = as_h?
@@ -240,5 +241,41 @@ struct YAML::Any
 
   protected def nested? : Bool
     !(as_h? || as_a?).nil?
+  end
+end
+
+class HTTP::Cookies
+  include Collection(String, HTTP::Cookie)
+
+  def each_pair(&block) : Nil
+    each { |c| yield({c.name, c}) }
+  end
+
+  def each_pair
+    each.map { |c| ({c.name, c}) }
+  end
+end
+
+struct HTTP::Headers
+  include Collection(String, Array(String))
+
+  def each_pair(&block) : Nil
+    each { |k, v| yield({k, v}) }
+  end
+
+  def each_pair : Iterator({String, Array(String)})
+    each
+  end
+end
+
+struct HTTP::Params
+  include Collection(String, String)
+
+  def each_pair(&block) : Nil
+    each { |k, v| yield({k, v}) }
+  end
+
+  def each_pair : Iterator({String, String})
+    each
   end
 end
