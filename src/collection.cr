@@ -16,7 +16,7 @@ module Collection(X, Y)
   # Returns the value for the given *key_or_index*.
   def [](key_or_index : X) : Y
     # This is likely overridden by any including types, but as a fallback we can
-    # safely derive a nieve implementation for non-nilable types
+    # safely derive a naive implementation for non-nilable types
     {% if Y.nilable? %}
       {{ raise "`##{@def.name}` must be implemented by #{@type}" }}
     {% else %}
