@@ -1,11 +1,11 @@
 require "json"
 require "yaml"
 
-# The `Relatable` module provides an interface and tools for working with
-# collections that map keys or indicies to values.
+# The `Collection` module provides an interface and tools for working with any
+# collection type. This includes both index and key-based containers.
 #
 # More formally, it models any type that provides a binary relation from X to Y.
-module Relatable(X, Y)
+module Collection(X, Y)
   # Must yield this structure's key, value or index, element pairs.
   abstract def each_pair(&block : {X, Y} ->) : Nil
 
@@ -24,7 +24,7 @@ module Relatable(X, Y)
       # This must be overridden by recursive types to flag when recusion has
       # reached the bottom of the available data.
       {{ raise "`#nested?` must be overriden in " + @type.stringify }}
-    {% elsif Y <= Relatable || Y.union? && Y.union_types.any? &.<= Relatable %}
+    {% elsif Y <= Collection || Y.union? && Y.union_types.any? &.<= Collection %}
       true
     {% else %}
       false
@@ -103,7 +103,7 @@ module Relatable(X, Y)
         each_pair do |(key, value)|
           path = Tuple.new(*prefix, key)
 
-          if value.is_a? Relatable
+          if value.is_a? Collection
             value.traverse(*path) { |pair| yield pair }
           else
             yield({path, value})
@@ -116,7 +116,7 @@ module Relatable(X, Y)
         each_pair.flat_map do |(key, value)|
           path = Tuple.new(*prefix, key)
 
-          if value.is_a? Relatable
+          if value.is_a? Collection
             value.traverse(*path)
           else
             {path, value}
@@ -145,7 +145,7 @@ module Relatable(X, Y)
 end
 
 module Indexable(T)
-  include Relatable(Int32, T)
+  include Collection(Int32, T)
 
   def each_pair(&block) : Nil
     each_with_index { |e, i| yield({i, e}) }
@@ -160,7 +160,7 @@ struct NamedTuple(T)
   # FIXME: the co-domain should be a `Union(T.values)`, however this is not
   # expressable with the current compiler.
   # See: https://github.com/crystal-lang/crystal/issues/6757
-  include Relatable(Symbol, T)
+  include Collection(Symbol, T)
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
@@ -172,7 +172,7 @@ struct NamedTuple(T)
 end
 
 class Hash(K, V)
-  include Relatable(K, V)
+  include Collection(K, V)
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
@@ -184,7 +184,7 @@ class Hash(K, V)
 end
 
 struct JSON::Any
-  include Relatable(String | Int32, JSON::Any)
+  include Collection(String | Int32, JSON::Any)
 
   def each_pair(&block : {String | Int32, JSON::Any} ->) : Nil
     if value = as_h? || as_a?
@@ -198,7 +198,7 @@ struct JSON::Any
 end
 
 struct YAML::Any
-  include Relatable(String | Int32, YAML::Any)
+  include Collection(String | Int32, YAML::Any)
 
   def each_pair(&block : {String | Int32, YAML::Any} ->) : Nil
     if value = as_a?

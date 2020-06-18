@@ -1,7 +1,7 @@
 require "spec"
-require "../src/relatable"
+require "../src/collection"
 
-describe Relatable do
+describe Collection do
   describe "#each_pair" do
     it "yields index, element pairs to a block" do
       array = [] of {Int32, Symbol}
