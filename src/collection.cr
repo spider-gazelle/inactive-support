@@ -36,7 +36,7 @@ module Collection(X, Y)
     # Unfortunately this involves bluring the path types from a Tuple down to an
     # Array to avoid infinite expansion. Under most usage scenarios this should
     # be relatively transparent to external users though.
-    {% if Y <= @type %}
+    {% if Y <= @type && Y != NoReturn %}
 
       # Traverse the structure depth first yielding a tuple of the path through
       # the structure and the leaf value for every element to the passed block.
@@ -160,7 +160,7 @@ struct NamedTuple(T)
   # FIXME: the co-domain should be a `Union(T.values)`, however this is not
   # expressable with the current compiler.
   # See: https://github.com/crystal-lang/crystal/issues/6757
-  include Collection(Symbol, T)
+  include Collection(Symbol, NoReturn)
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
