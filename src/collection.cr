@@ -75,20 +75,18 @@ module Collection(X, Y)
       # The paths contain an Array of the keys or indicies used across
       # intermediate structures, similar to what would be passed to `#dig`.
       def traverse(&block : {Array(X), Y} ->) : Nil forall T
-        path = [] of X
-        traverse(path, &block)
+        traverse [] of X, &block
       end
 
       # :ditto:
       def traverse(*prefix : *T, &block : {Array(Union(*T, X)), Y} ->) : Nil forall T
-        path = prefix.to_a.as(Array(Union(*T, X)))
-        traverse(path, &block)
+        traverse prefix.to_a, &block
       end
 
       # :nodoc:
       protected def traverse(prefix : Array(T), &block : {Array(T | X), Y} ->) : Nil forall T
         each_pair do |(key, value)|
-          path = prefix.dup.as(Array(T | X)) << key
+          path = prefix.map &.as(T | X) << key
 
           if value.nested?
             value.traverse(path, &block)
@@ -100,14 +98,12 @@ module Collection(X, Y)
 
       # Provides an Iterator that will traverse the structure.
       def traverse : Iterator({Array(X), Y})
-        path = [] of X
-        traverse path
+        traverse [] of X
       end
 
       # :ditto:
-      def traverse2(*prefix : *T) : Iterator({Array(Union(*T, X)), Y}) forall T
-        path = prefix.to_a.as(Array(Union(*T, X)))
-        traverse path
+      def traverse(*prefix : *T) : Iterator({Array(Union(*T, X)), Y}) forall T
+        traverse prefix.to_a
       end
 
       # :nodoc:
@@ -117,7 +113,7 @@ module Collection(X, Y)
         # This should be rewritten to provide lazy parsing of the underlying
         # structure when possible.
         entries = [] of {Array(T | X), Y}
-        traverse do |entry|
+        traverse prefix do |entry|
           entries = entries << entry
         end
         entries.each
