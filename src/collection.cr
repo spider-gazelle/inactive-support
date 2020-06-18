@@ -6,6 +6,30 @@ require "yaml"
 #
 # More formally, it models any type that provides a binary relation from X to Y.
 module Collection(X, Y)
+  # Returns the value for the given *key_or_index*, or `nil`.
+  def []?(key_or_index : X) : Y?
+    # FIXME: switch this to an abstract method when possible.
+    # See https://github.com/crystal-lang/crystal/issues/8232
+    {{ raise "`##{@def.name}` must be implemented by #{@type}" }}
+  end
+
+  # Returns the value for the given *key_or_index*.
+  def [](key_or_index : X) : Y
+    # This is likely overridden by any including types, but as a fallback we can
+    # safely derive a nieve implementation for non-nilable types
+    {% if Y.nilable? %}
+      {{ raise "`##{@def.name}` must be implemented by #{@type}" }}
+    {% else %}
+      self[key_or_index]? || begin
+        if key_of_index.is_a? Int
+          raise IndexError.new
+        else
+          raise KeyError.new("Missing #{@type} key \"#{key_or_index}\"")
+        end
+      end
+    {% end %}
+  end
+
   # Must yield this structure's key, value or index, element pairs.
   abstract def each_pair(&block : {X, Y} ->) : Nil
 
@@ -23,7 +47,7 @@ module Collection(X, Y)
     {% if Y <= @type %}
       # This must be overridden by recursive types to flag when recusion has
       # reached the bottom of the available data.
-      {{ raise "`#nested?` must be overriden in " + @type.stringify }}
+      {{ raise "`##{@def.name}` must be implemented by #{@type}" }}
     {% elsif Y <= Collection || Y.union? && Y.union_types.any? &.<= Collection %}
       true
     {% else %}

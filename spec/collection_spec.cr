@@ -2,6 +2,50 @@ require "spec"
 require "../src/collection"
 
 describe Collection do
+  describe "#[]?" do
+    context Array do
+      collection = [42].as Collection(Int32, Int32)
+
+      it "provides entries by index" do
+        collection[0]?.should eq(42)
+      end
+
+      it "returns nil for invalid indicies" do
+        collection[999]?.should be_nil
+      end
+    end
+
+    context Hash do
+      it "provides the element when it exists" do
+        collection = {:foo => 42}.as Collection(Symbol, Int32)
+        collection[:foo]?.should eq(42)
+      end
+    end
+
+    context JSON::Any do
+      it "provides the element" do
+        collection = JSON.parse({foo: 42}.to_json).as Collection(String | Int32, JSON::Any)
+        collection["foo"]?.should eq(42)
+      end
+    end
+  end
+
+  describe "#[]" do
+    context Hash do
+      collection = {:foo => 42}.as Collection(Symbol, Int32)
+
+      it "provides the element when it exists" do
+        collection[:foo].should eq(42)
+      end
+
+      it "raises on invalid key" do
+        expect_raises(KeyError) do
+          collection[:bar]
+        end
+      end
+    end
+  end
+
   describe "#each_pair" do
     it "yields index, element pairs to a block" do
       array = [] of {Int32, Symbol}
