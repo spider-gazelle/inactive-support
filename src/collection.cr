@@ -30,6 +30,12 @@ module Collection(X, Y)
     {% end %}
   end
 
+  # Traverses the depth of a structure and returns the value.
+  abstract def dig(key : X, *subkeys)
+
+  # Traverses the depth of a structure and returns the value, or nil.
+  abstract def dig?(key : X, *subkeys)
+
   # Must yield this structure's key, value or index, element pairs.
   abstract def each_pair(&block : {X, Y} ->) : Nil
 
