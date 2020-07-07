@@ -11,4 +11,3 @@ describe "macro/args" do
     result.should eq({a: "foo", b: "bar", c: "baz"})
   end
 end
-
