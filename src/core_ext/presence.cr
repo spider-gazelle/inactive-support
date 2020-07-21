@@ -12,10 +12,7 @@ end
 
 # a special case to return `nil` if a String only contains whitespace
 class String
-  PRESENT_MATCHER = /^\s+$/
-
   def present?
-    return nil if empty?
-    PRESENT_MATCHER.match(self) ? nil : self
+    self if !blank?
   end
 end
