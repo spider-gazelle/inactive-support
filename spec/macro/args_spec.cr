@@ -20,4 +20,3 @@ describe "macro/args" do
     result.should eq({d: "test", e: {hello: "world"}})
   end
 end
-
