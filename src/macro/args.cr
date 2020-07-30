@@ -16,4 +16,3 @@ macro args
     {% end %}
   {% end %}
 end
-

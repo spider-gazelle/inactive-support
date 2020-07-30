@@ -144,7 +144,7 @@ describe Collection do
 
     it "supports a non-recursive collection of recrusive types" do
       json = JSON.parse [{foo: :bar}].to_json
-      deep = { a: [json] }
+      deep = {a: [json]}
       deep.traverse.to_a.first.should eq({[:a, 0, 0, "foo"], "bar"})
     end
   end
