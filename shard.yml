@@ -1,9 +1,7 @@
 name: inactive-support
-version: 0.1.1
+crystal: ">= 0.34.0"
+version: 0.1.2
+license: MIT
 
 authors:
   - Kim Burgess <kim@place.technology>
-
-crystal: ~> 0.34
-
-license: MIT
