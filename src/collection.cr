@@ -1,6 +1,7 @@
 require "json"
 require "yaml"
 require "http"
+require "uri"
 
 # The `Collection` module provides an interface and tools for working with any
 # collection type. This includes both index and key-based containers.
@@ -63,6 +64,10 @@ module Collection(X, Y)
   end
 
   macro included
+    {% methods = @type.methods.map(&.name.stringify) %}
+    {% if !methods.includes? "dig" %}
+      include Digable
+    {% end %}
     # Recursive types (such as `JSON::Any`) require some special handling.
     # Unfortunately this involves bluring the path types from a Tuple down to an
     # Array to avoid infinite expansion. Under most usage scenarios this should
@@ -171,6 +176,31 @@ module Collection(X, Y)
   end
 end
 
+module Digable
+  def dig(key : K, *subkeys)
+    if (value = self[key]) && value.responds_to?(:dig)
+      return value.dig(*subkeys)
+    end
+    raise KeyError.new "#{self.class} value not diggable for key: #{key.inspect}"
+  end
+
+  # :nodoc:
+  def dig(key : K)
+    self[key]
+  end
+
+  def dig?(key : K, *subkeys)
+    if (value = self[key]?) && value.responds_to?(:dig?)
+      value.dig?(*subkeys)
+    end
+  end
+
+  # :nodoc:
+  def dig?(key : K)
+    self[key]?
+  end
+end
+
 module Indexable(T)
   include Collection(Int32, T)
 
@@ -240,34 +270,8 @@ struct YAML::Any
   end
 end
 
-module Digable
-  def dig(key : K, *subkeys)
-    if (value = self[key]) && value.responds_to?(:dig)
-      return value.dig(*subkeys)
-    end
-    raise KeyError.new "#{self.class} value not diggable for key: #{key.inspect}"
-  end
-
-  # :nodoc:
-  def dig(key : K)
-    self[key]
-  end
-
-  def dig?(key : K, *subkeys)
-    if (value = self[key]?) && value.responds_to?(:dig?)
-      value.dig?(*subkeys)
-    end
-  end
-
-  # :nodoc:
-  def dig?(key : K)
-    self[key]?
-  end
-end
-
 class HTTP::Cookies
   include Collection(String, HTTP::Cookie)
-  include Digable
 
   def each_pair(&block) : Nil
     each { |c| yield({c.name, c}) }
@@ -280,7 +284,6 @@ end
 
 struct HTTP::Headers
   include Collection(String, Array(String))
-  include Digable
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
@@ -291,9 +294,8 @@ struct HTTP::Headers
   end
 end
 
-struct HTTP::Params
+struct URI::Params
   include Collection(String, String)
-  include Digable
 
   def each_pair(&block) : Nil
     each { |k, v| yield({k, v}) }
