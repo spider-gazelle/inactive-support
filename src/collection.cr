@@ -64,10 +64,8 @@ module Collection(X, Y)
   end
 
   macro included
-    {% methods = @type.methods.map(&.name.stringify) %}
-    {% if !methods.includes? "dig" %}
-      include Digable
-    {% end %}
+    include Digable(X)
+
     # Recursive types (such as `JSON::Any`) require some special handling.
     # Unfortunately this involves bluring the path types from a Tuple down to an
     # Array to avoid infinite expansion. Under most usage scenarios this should
@@ -176,28 +174,37 @@ module Collection(X, Y)
   end
 end
 
-module Digable
-  def dig(key : K, *subkeys)
-    if (value = self[key]) && value.responds_to?(:dig)
-      return value.dig(*subkeys)
-    end
-    raise KeyError.new "#{self.class} value not diggable for key: #{key.inspect}"
-  end
+module Digable(X)
+  macro included
+    {% methods = @type.methods.map(&.name.stringify) %}
+    {% if !methods.includes? "dig" %}
+      def dig(key_or_index : X, *subkeys)
+        if (value = self[key_or_index]) && value.responds_to?(:dig)
+          return value.dig(*subkeys)
+        end
+        if key_or_index.is_a? Int
+          raise IndexError.new "#{self.class} value not diggable for index: #{key_or_index.inspect}"
+        else
+          raise KeyError.new "#{self.class} value not diggable for key: #{key_or_index.inspect}"
+        end
+      end
 
-  # :nodoc:
-  def dig(key : K)
-    self[key]
-  end
+      # :nodoc:
+      def dig(key_or_index : X)
+        self[key_on_index]
+      end
 
-  def dig?(key : K, *subkeys)
-    if (value = self[key]?) && value.responds_to?(:dig?)
-      value.dig?(*subkeys)
-    end
-  end
+      def dig?(key_or_index : X, *subkeys)
+        if (value = self[key_or_index]?) && value.responds_to?(:dig?)
+          value.dig?(*subkeys)
+        end
+      end
 
-  # :nodoc:
-  def dig?(key : K)
-    self[key]?
+      # :nodoc:
+      def dig?(key_or_index : X)
+        self[key_or_index]?
+      end
+    {% end %}
   end
 end
 
