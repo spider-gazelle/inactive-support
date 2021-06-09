@@ -1,6 +1,6 @@
 name: inactive-support
-crystal: ">= 0.34.0"
-version: 0.1.2
+crystal: ">= 0.36.0"
+version: 0.2.0
 license: MIT
 
 authors:
