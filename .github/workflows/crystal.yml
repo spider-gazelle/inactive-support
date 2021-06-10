@@ -1,22 +1,32 @@
-name: Crystal CI
+name: CI
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
-    container:
-      image: crystallang/crystal
-
+    strategy:
+      fail-fast: false
+      matrix:
+        experimental: [false]
+        os: [ubuntu-latest]
+        crystal:
+          - latest
+          - 1.0.0
+          - 0.36.1
+        include:
+          - experimental: true
+            os: ubuntu-latest
+            crystal: nightly
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    container: crystallang/crystal:${{ matrix.crystal }}-alpine
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: shards install
+    - name: Format
+      run: crystal tool format --check
     - name: Run tests
-      run: crystal spec
+      run: crystal spec -v --error-trace
