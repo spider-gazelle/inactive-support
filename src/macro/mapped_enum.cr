@@ -30,9 +30,9 @@ struct Enum::Mapping(T, U)
     @values
   end
 
-  # Returns the mapped value for the enum member at the given value.
-  def mapped_value(i : Int) : U
-    values[i]
+  # Returns the mapped value for the enum member.
+  def mapped_value(x : T) : U
+    values[x.value]
   end
 end
 
@@ -88,7 +88,7 @@ macro mapped_enum(name, &block)
       end
 
       def mapped_value
-        {{mapping}}.mapped_value self.value
+        {{mapping}}.mapped_value self
       end
 
       \{% for method in {{body_type}}.class.methods %}
