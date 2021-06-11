@@ -25,11 +25,6 @@
 # Example::A.mapped_value # => "foo"
 # ```
 #
-# A short form is also provided
-# ```
-# ~Example::A # => "foo"
-# ```
-#
 # All other functionality, performance and safety that enums provide holds.
 macro mapped_enum(name, *members, &block)
   {% begin %}
@@ -116,11 +111,6 @@ macro mapped_enum(name, *members, &block)
           in {{type_name}}::{{member.target.id}} then {{member.value}}
         {% end %}
         end
-      end
-
-      # :ditto:
-      def ~
-        mapped_value
       end
 
       {% if block %}

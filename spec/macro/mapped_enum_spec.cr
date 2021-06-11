@@ -83,12 +83,6 @@ describe "macro/mapped_enum" do
           {{type}}::A.mapped_value.should eq "foo"
         end
       end
-
-      describe "#~" do
-        it "returns the mapped value" do
-          (~{{type}}::A).should eq "foo"
-        end
-      end
     end
   {% end %}
 end

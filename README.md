@@ -94,9 +94,5 @@ Mapped values may also be extracted
 ```crystal
 Example::A.mapped_value # => "foo"
 ```
-or
-```crystal
-~Example::A # => "foo"
-```
 
 All other functionality and safety that enums provide holds.
