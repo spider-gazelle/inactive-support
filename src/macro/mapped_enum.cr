@@ -69,7 +69,7 @@ macro mapped_enum(name, &block)
     {% body_type = "#{enum_type}__body".id %}
     {% mapping = "#{enum_type}__mapping".id %}
 
-    module {{body_type}}
+    private module {{body_type}}
       {{block.body}}
     end
 
@@ -93,6 +93,14 @@ macro mapped_enum(name, &block)
       def mapped_value
         {{mapping}}.mapped_value self.value
       end
+
+      \{% for method in {{body_type}}.class.methods %}
+        \{{method.id}}
+      \{% end %}
+
+      \{% for method in {{body_type}}.methods %}
+        \{{method.id}}
+      \{% end %}
     end
 
     private {{mapping}} = Enum::Mapping.new {{enum_type}}, \{{ {{body_type}}.constants.map { |t| "{{body_type}}::#{t}".id } }}

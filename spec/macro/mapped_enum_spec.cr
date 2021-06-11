@@ -5,6 +5,14 @@ mapped_enum SpecMappedEnum do
   A = "foo"
   B = "bar"
   C = "baz"
+
+  def instance_test
+    "hello"
+  end
+
+  def self.class_test
+    42
+  end
 end
 
 describe "macro/mapped_enum" do
@@ -45,5 +53,12 @@ describe "macro/mapped_enum" do
       SpecMappedEnum::A.mapped_value.should eq "foo"
     end
   end
-end
 
+  it "places instance methods in the created type" do
+    SpecMappedEnum::A.instance_test.should eq "hello"
+  end
+
+  it "places class method in the created type" do
+    SpecMappedEnum.class_test.should eq 42
+  end
+end
