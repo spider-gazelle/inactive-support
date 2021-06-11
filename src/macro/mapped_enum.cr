@@ -1,32 +1,5 @@
-# Defines a enum where each member holds a reference to an associated value.
-#
-# This may be used to define enum over non-integer types, whilst keeping the
-# same type safety that integer-backed enums provide.
-#
-# ```
-# mapped_enum Example(String),
-#   A = "foo",
-#   B = "bar",
-#   C = "baz"
-# ```
-#
-# Instances may be read from mapped values
-# ```
-# Example.from_mapped_value "foo" # => Example::A
-# ```
-#
-# A short-form syntax is also available for this
-# ```
-# Example["foo"] # => Example::A
-# ```
-#
-# Mapped values may also be extracted
-# ```
-# Example::A.mapped_value # => "foo"
-# ```
-#
-# All other functionality, performance and safety that enums provide holds.
-
+# Struct for associating an enum with a set of arbitrary values - one for each
+# member.
 struct Enum::Mapping(T, U)
   def initialize(enum_type : T.class, @values : Indexable(U)); end
 
@@ -63,6 +36,30 @@ struct Enum::Mapping(T, U)
   end
 end
 
+# Defines a enum where each member holds a reference to an associated value.
+#
+# This may be used to define enum over non-integer types, whilst keeping the
+# same type safety that integer-backed enums provide.
+#
+# ```
+# mapped_enum Example do
+#   A = "foo"
+#   B = "bar"
+#   C = "baz"
+# end
+# ```
+#
+# Instances may be read from mapped values
+# ```
+# Example["foo"] # => Example::A
+# ```
+#
+# Mapped values may also be extracted
+# ```
+# Example::A.mapped_value # => "foo"
+# ```
+#
+# All other functionality, performance and safety that enums provide holds.
 macro mapped_enum(name, &block)
   {% begin %}
     {% enum_type = name.id %}

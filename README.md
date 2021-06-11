@@ -72,20 +72,16 @@ example "foo", "bar", "baz" # => {a: "foo", b: "bar", c: "baz"}
 
 ### `macro/mapped_enum`
 
-Provides a lightweight syntax for defining non-integer enum types.
+Provides support for defining non-integer enum types.
 ```crystal
-mapped_enum Example(String),
-  A = "foo",
-  B = "bar",
+mapped_enum Example do
+  A = "foo"
+  B = "bar"
   C = "baz"
+end
 ```
-The type may be optionally ommitted, but is recommended for increased compile-time safety.
 
 Instances may be read from mapped values
-```crystal
-Example.from_mapped_value "foo" # => Example::A
-```
-or
 ```crystal
 Example["foo"] # => Example::A
 ```
