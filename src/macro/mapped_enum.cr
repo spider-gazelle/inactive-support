@@ -26,96 +26,75 @@
 # ```
 #
 # All other functionality, performance and safety that enums provide holds.
-macro mapped_enum(name, *members, &block)
-  {% begin %}
-    {% if name.is_a? Generic %}
-      {% type_name = name.name.id %}
-      {% mapped_type = name.type_vars[0].id %}
-      {% strict = true %}
-    {% else %}
-      {% type_name = name.id %}
-      {% strict = false %}
-    {% end %}
-    enum {{type_name}}
-      {% for member in members %}
-        {{member.target.id}}
-      {% end %}
 
-      # Returns the enum member that has the given mapped value, or yields if no
-      # such member exists.
-      {% if strict %}
-        def self.from_mapped_value(value : {{mapped_type}}, & : {{mapped_type}} -> T) : self | T forall T
-      {% else %}
-        def self.from_mapped_value(value, &)
-      {% end %}
-        case value
-        {% for member in members %}
-          when {{member.value}} then {{type_name}}::{{member.target.id}}
-        {% end %}
-        else
-          yield value
-        end
-      end
+struct Enum::Mapping(T, U)
+  def initialize(enum_type : T.class, @values : Indexable(U)); end
 
-      # Returns the enum member that has the given mapped value, or raises if no
-      # such member exists.
-      {% if strict %}
-        def self.from_mapped_value(value : {{mapped_type}}) : self
-      {% else %}
-        def self.from_mapped_value(value) : self
-      {% end %}
-        from_mapped_value(value) { raise "Unmapped value for enum #{self}: #{value}" }
-      end
-
-      # :ditto:
-      {% if strict %}
-        def self.[](value : {{mapped_type}}) : self
-      {% else %}
-        def self.[](value) : self
-      {% end %}
-        from_mapped_value value
-      end
-
-      # Returns the enum member that has the given mapped value, or `nil` if no
-      # such member exists.
-      {% if strict %}
-        def self.from_mapped_value?(value : {{mapped_type}}) : self?
-      {% else %}
-        def self.from_mapped_value?(value) : self?
-      {% end %}
-        from_mapped_value(value) { nil }
-      end
-
-      # :ditto:
-      {% if strict %}
-        def self.[]?(value : {{mapped_type}}) : self?
-      {% else %}
-        def self.[]?(value) : self?
-      {% end %}
-        from_mapped_value? value
-      end
-
-      # Returns the `Tuple` of all mapped values.
-      def self.mapped_values
-        {{members.map &.value}}
-      end
-
-      # Returns the value mapped to `self`.
-      {% if strict %}
-        def mapped_value : {{mapped_type}}
-      {% else %}
-        def mapped_value
-      {% end %}
-        case self
-        {% for member in members %}
-          in {{type_name}}::{{member.target.id}} then {{member.value}}
-        {% end %}
-        end
-      end
-
-      {% if block %}
-        {{block.body}}
-      {% end %}
+  # Returns the enum member that has the given mapped value, or yields if no such
+  # member exists.
+  def from_mapped_value(x : U, & : U -> V) : T | V forall V
+    if value = values.index(x)
+      T.from_value value
+    else
+      yield x
     end
+  end
+
+  # Returns the enum member that has the given mapped value, or raises if no such
+  # member exists.
+  def [](x : U) : T
+    from_mapped_value(x) { raise "No mapping exists from #{x} to #{T}" }
+  end
+
+  # Returns the enum member that has the given mapped value, or `nil` if no such
+  # member exists.
+  def []?(x : U) : T?
+    from_mapped_value(x) { nil }
+  end
+
+  # Returns the list of all mapped values.
+  def values : Indexable(U)
+    @values
+  end
+
+  # Returns the mapped value for the enum member at the given value.
+  def mapped_value(i : Int) : U
+    values[i]
+  end
+end
+
+macro mapped_enum(name, &block)
+  {% begin %}
+    {% enum_type = name.id %}
+    {% body_type = "#{enum_type}__body".id %}
+    {% mapping = "#{enum_type}__mapping".id %}
+
+    module {{body_type}}
+      {{block.body}}
+    end
+
+    enum {{enum_type}}
+      \{% for member in {{body_type}}.constants %}
+        \{{member}}
+      \{% end %}
+
+      def self.[](mapped_value) : self
+        {{mapping}}[mapped_value]
+      end
+
+      def self.[]?(mapped_value) : self?
+        {{mapping}}[mapped_value]?
+      end
+
+      def self.mapped_values
+        {{mapping}}.values
+      end
+
+      def mapped_value
+        {{mapping}}.mapped_value self.value
+      end
+    end
+
+    private {{mapping}} = Enum::Mapping.new {{enum_type}}, \{{ {{body_type}}.constants.map { |t| "{{body_type}}::#{t}".id } }}
   {% end %}
 end
