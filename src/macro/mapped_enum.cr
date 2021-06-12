@@ -3,6 +3,9 @@
 struct Enum::Mapping(T, U)
   def initialize(enum_type : T.class, @values : Indexable(U)); end
 
+  # Mapped values, where indicies are `T.value`.
+  getter values
+
   # Returns the enum member that has the given mapped value, or yields if no such
   # member exists.
   def from_mapped_value(x : U, & : U -> V) : T | V forall V
@@ -23,11 +26,6 @@ struct Enum::Mapping(T, U)
   # member exists.
   def []?(x : U) : T?
     from_mapped_value(x) { nil }
-  end
-
-  # Returns the list of all mapped values.
-  def values : Indexable(U)
-    @values
   end
 
   # Returns the mapped value for the enum member.
