@@ -1,6 +1,6 @@
 # Annotation for attaching arbitrary value mappings to Enum types.
 #
-# When applied, a positional arg must exist for each enum meber
+# When applied, a positional arg must exist for each enum member
 # ```
 # @[MappedValues("foo", "bar", 42)]
 # enum Foo
