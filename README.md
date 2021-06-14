@@ -14,6 +14,20 @@ Their usage should be highly intentional and not a default choice.
 
 ## Tools
 
+### `args`
+
+Enables `args` to be stated anywhere within a method body.
+This is substituted with a NamedTuple containing the arguments of the surrounding method.
+
+```crystal
+def example(a : String, b : String, c : String)
+  args
+end
+
+example "foo", "bar", "baz" # => {a: "foo", b: "bar", c: "baz"}
+```
+
+
 ### `collection`
 
 The `Collection` module provides an interface and tools for working with any collection type.
@@ -58,20 +72,6 @@ my_hash = {} of String => String
 
 # set some defaults
 my_hash = my_hash.presence || {"default" => "settings"}
-```
-
-
-### `macro/args`
-
-Enables `args` to be stated anywhere within a method body.
-This is substituted with a NamedTuple containing the arguments of the surrounding method.
-
-```crystal
-def example(a : String, b : String, c : String)
-  args
-end
-
-example "foo", "bar", "baz" # => {a: "foo", b: "bar", c: "baz"}
 ```
 
 
