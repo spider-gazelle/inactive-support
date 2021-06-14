@@ -31,4 +31,3 @@ module Digable(X)
     {% end %}
   end
 end
-
