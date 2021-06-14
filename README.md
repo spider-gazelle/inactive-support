@@ -81,9 +81,21 @@ mapped_enum Example do
 end
 ```
 
-Instances may be read from mapped values
+Members may be accessed via a compile-time lookup from their mapped value
 ```crystal
 Example["foo"] # => Example::A
+```
+
+Attempting static resolution for an unmapped value will result in a compile error
+```crystal
+Example["qux"]
+
+Error: No mapping defined from "qux" to Example
+```
+
+Instances may be read dynamically
+```crystal
+Example.from_mapped_value "foo" # => Example::A
 ```
 
 Mapped values may also be extracted

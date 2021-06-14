@@ -1,36 +1,59 @@
-# Struct for associating an enum with a set of arbitrary values - one for each
-# member.
-struct Enum::Mapping(T, U)
-  def initialize(enum_type : T.class, @values : Indexable(U)); end
+# Annotation for attaching arbitrary value mappings to Enum types.
+#
+# When applied, a positional arg must exist for each enum meber
+# ```
+# @[MappedValues("foo", "bar", 42)]
+# enum Foo
+#   A
+#   B
+#   C
+# end
+# ```
+annotation MappedValues
+end
 
-  # Mapped values, where indicies are `T.value`.
-  getter values
+struct Enum
+  # Provides the Tuple of values associated with members of `self`.
+  def self.mapped_values
+    {% if ann = @type.annotation(MappedValues) %}
+      {% values = ann.args %}
+      {% if values.size == @type.constants.size %}
+        {{ values }}
+      {% else %}
+        {{ raise "MappedValues does not match the number of members in #{@type}" }}
+      {% end %}
+    {% else %}
+      {{ raise "No MappedValues defined for #{@type}" }}
+    {% end %}
+  end
 
-  # Returns the enum member that has the given mapped value, or yields if no such
-  # member exists.
-  def from_mapped_value(x : U, & : U -> V) : T | V forall V
-    if value = values.index(x)
-      T.from_value value
+  # Returns the enum member that has the given mapped value, or yields if no
+  # such member exists.
+  def self.from_mapped_value(mapped_value : T, & : T -> U) : self | U forall T, U
+    if value = mapped_values.index(mapped_value)
+      self.from_value value
     else
-      yield x
+      yield mapped_value
     end
   end
 
-  # Returns the enum member that has the given mapped value, or raises if no such
-  # member exists.
-  def [](x : U) : T
-    from_mapped_value(x) { raise "No mapping exists from #{x} to #{T}" }
+  # Returns the enum member that has the given mapped value, or raises if no
+  # such member exists.
+  def self.from_mapped_value(mapped_value) : self
+    from_mapped_value(mapped_value) do
+      raise "No mapping exists from #{mapped_value} to #{self}"
+    end
   end
 
   # Returns the enum member that has the given mapped value, or `nil` if no such
   # member exists.
-  def []?(x : U) : T?
-    from_mapped_value(x) { nil }
+  def self.from_mapped_value?(mapped_value) : self?
+    from_mapped_value(mapped_value) { nil }
   end
 
   # Returns the mapped value for the enum member.
-  def mapped_value(x : T) : U
-    values[x.value]
+  def mapped_value
+    self.class.mapped_values[self.value]
   end
 end
 
@@ -47,9 +70,15 @@ end
 # end
 # ```
 #
-# Instances may be read from mapped values
+# Members may statically accessed from mapped values
 # ```
 # Example["foo"] # => Example::A
+# ```
+#
+# Or resolved dynamically
+# ```
+# value = "foo"
+# Example.from_mapped_value value # => Example::A
 # ```
 #
 # Mapped values may also be extracted
@@ -59,35 +88,44 @@ end
 #
 # All other functionality, performance and safety that enums provide holds.
 macro mapped_enum(name, &block)
-  {% begin %}
-    {% enum_type = name.id %}
-    {% body_type = "#{enum_type}__body".id %}
-    {% mapping = "#{enum_type}__mapping".id %}
+  {% enum_type = name.id %}
+  {% body_type = "#{enum_type}__".id %}
 
-    private module {{body_type}}
-      {{block.body}}
-    end
+  # Throwaway type for expanding the block into for parsing.
+  private module {{body_type}}
+    {{block.body}}
+  end
 
+  \{% begin %}
+    @[MappedValues(\{{ {{body_type}}.constants.map { |x| {{body_type}}.constant(x) }.splat }})]
     enum {{enum_type}}
       \{% for member in {{body_type}}.constants %}
         \{{member}}
       \{% end %}
 
-      def self.[](mapped_value) : self
-        {{mapping}}[mapped_value]
-      end
+      \{% verbatim do %}
+        # Provides compile-time resolution from a statically known mapped value
+        # to a member of `self`.
+        macro [](mapped_value)
+          \{% if mapped_value.is_a? Path %}
+            \{% value = mapped_value.resolve %}
+          \{% elsif mapped_value.is_a? Var %}
+            \{{ raise "Cannot statically resolve #{mapped_value} - use #{@type}.from_mapped_value to lookup at runtime" }}
+          \{% else %}
+            \{% value = mapped_value %}
+          \{% end %}
 
-      def self.[]?(mapped_value) : self?
-        {{mapping}}[mapped_value]?
-      end
+          \{% found = false %}
+          \{% for member_value, idx in @type.annotation(MappedValues).args %}
+            \{% if value == member_value && !found %}
+              \{% found = true %}
+              \{{ "#{@type.name}::#{@type.constants[idx]}".id }}
+            \{% end %}
+          \{% end %}
 
-      def self.mapped_values
-        {{mapping}}.values
-      end
-
-      def mapped_value
-        {{mapping}}.mapped_value self
-      end
+          \{{ raise "No mapping defined from #{value} to #{@type}" unless found }}
+        end
+      \{% end %}
 
       \{% for method in {{body_type}}.class.methods %}
         \{{method.id}}
@@ -97,7 +135,5 @@ macro mapped_enum(name, &block)
         \{{method.id}}
       \{% end %}
     end
-
-    private {{mapping}} = Enum::Mapping.new {{enum_type}}, \{{ {{body_type}}.constants.map { |t| "{{body_type}}::#{t}".id } }}
-  {% end %}
+  \{% end %}
 end
