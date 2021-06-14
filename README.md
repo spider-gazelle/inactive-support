@@ -4,6 +4,11 @@ A collection of classes, modules, macros and standard library extensions to simp
 
 Each tool is small, independent and generic.
 To use a tool, explicitly `require` where needed.
+
+```crystal
+require "inactive_support/<tool name>"
+```
+
 Their usage should be highly intentional and not a default choice.
 
 
@@ -40,7 +45,7 @@ nested.traverse.to_h # =>
 ```
 
 
-### `core_ext/presence`
+### `presence`
 
 Provides `Object#presence`.
 
