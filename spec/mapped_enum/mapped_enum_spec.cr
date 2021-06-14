@@ -1,5 +1,5 @@
 require "spec"
-require "../../src/macro/mapped_enum"
+require "../../src/mapped_enum"
 
 mapped_enum SpecMappedEnum do
   A = "foo"

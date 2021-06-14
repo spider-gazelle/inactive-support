@@ -59,23 +59,7 @@ nested.traverse.to_h # =>
 ```
 
 
-### `presence`
-
-Provides `Object#presence`.
-
-This Allows one to check for the presence of useful data in container types such as `Array` and `Hash`.
-
-```crystal
-# hash loaded from config file or database
-# imagine this is `Hash(String, String) | Nil`
-my_hash = {} of String => String
-
-# set some defaults
-my_hash = my_hash.presence || {"default" => "settings"}
-```
-
-
-### `macro/mapped_enum`
+### `mapped_enum`
 
 Provides support for defining non-integer enum types.
 ```crystal
@@ -109,3 +93,21 @@ Example::A.mapped_value # => "foo"
 ```
 
 All other functionality and safety that enums provide holds.
+
+
+### `presence`
+
+Provides `Object#presence`.
+
+This Allows one to check for the presence of useful data in container types such as `Array` and `Hash`.
+
+```crystal
+# hash loaded from config file or database
+# imagine this is `Hash(String, String) | Nil`
+my_hash = {} of String => String
+
+# set some defaults
+my_hash = my_hash.presence || {"default" => "settings"}
+```
+
+
