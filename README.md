@@ -4,10 +4,29 @@ A collection of classes, modules, macros and standard library extensions to simp
 
 Each tool is small, independent and generic.
 To use a tool, explicitly `require` where needed.
+
+```crystal
+require "inactive_support/<tool name>"
+```
+
 Their usage should be highly intentional and not a default choice.
 
 
 ## Tools
+
+### `args`
+
+Enables `args` to be stated anywhere within a method body.
+This is substituted with a NamedTuple containing the arguments of the surrounding method.
+
+```crystal
+def example(a : String, b : String, c : String)
+  args
+end
+
+example "foo", "bar", "baz" # => {a: "foo", b: "bar", c: "baz"}
+```
+
 
 ### `collection`
 
@@ -40,37 +59,7 @@ nested.traverse.to_h # =>
 ```
 
 
-### `core_ext/presence`
-
-Provides `Object#presence`.
-
-This Allows one to check for the presence of useful data in container types such as `Array` and `Hash`.
-
-```crystal
-# hash loaded from config file or database
-# imagine this is `Hash(String, String) | Nil`
-my_hash = {} of String => String
-
-# set some defaults
-my_hash = my_hash.presence || {"default" => "settings"}
-```
-
-
-### `macro/args`
-
-Enables `args` to be stated anywhere within a method body.
-This is substituted with a NamedTuple containing the arguments of the surrounding method.
-
-```crystal
-def example(a : String, b : String, c : String)
-  args
-end
-
-example "foo", "bar", "baz" # => {a: "foo", b: "bar", c: "baz"}
-```
-
-
-### `macro/mapped_enum`
+### `mapped_enum`
 
 Provides support for defining non-integer enum types.
 ```crystal
@@ -104,3 +93,21 @@ Example::A.mapped_value # => "foo"
 ```
 
 All other functionality and safety that enums provide holds.
+
+
+### `presence`
+
+Provides `Object#presence`.
+
+This Allows one to check for the presence of useful data in container types such as `Array` and `Hash`.
+
+```crystal
+# hash loaded from config file or database
+# imagine this is `Hash(String, String) | Nil`
+my_hash = {} of String => String
+
+# set some defaults
+my_hash = my_hash.presence || {"default" => "settings"}
+```
+
+

@@ -1,5 +1,5 @@
 require "spec"
-require "../src/collection"
+require "../../src/collection"
 
 describe Collection do
   describe "#[]?" do

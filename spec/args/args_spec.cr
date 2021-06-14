@@ -1,5 +1,5 @@
 require "spec"
-require "../../src/macro/args"
+require "../../src/args"
 
 def args_test(a, b, c)
   args

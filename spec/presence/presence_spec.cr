@@ -1,5 +1,5 @@
 require "spec"
-require "../../src/core_ext/presence"
+require "../../src/presence"
 
 describe "core_ext/presence" do
   it "checks for presence of data in objects" do
