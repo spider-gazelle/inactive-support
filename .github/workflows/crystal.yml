@@ -12,16 +12,14 @@ jobs:
       fail-fast: false
       matrix:
         experimental: [false]
-        os: [ubuntu-latest]
         crystal:
           - latest
           - 1.0.0
           - 0.36.1
         include:
           - experimental: true
-            os: ubuntu-latest
             crystal: nightly
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
     container: crystallang/crystal:${{ matrix.crystal }}-alpine
     steps:
