@@ -19,6 +19,7 @@ jobs:
         include:
           - experimental: true
             crystal: nightly
+    name: "crystal: ${{ matrix.crystal }}, unstable: ${{ matrix.experimental }}"
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
     container: crystallang/crystal:${{ matrix.crystal }}-alpine
