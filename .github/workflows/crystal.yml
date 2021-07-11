@@ -7,7 +7,19 @@ on:
     - cron: "0 6 * * 1"
 
 jobs:
-  build:
+  style:
+    runs-on: ubuntu-latest
+    container: crystallang/crystal
+    steps:
+      - uses: actions/checkout@v2
+      - name: Format
+        run: crystal tool format --check
+      - name: Lint
+        uses: crystal-ameba/github-action@v0.2.12
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +37,5 @@ jobs:
     container: crystallang/crystal:${{ matrix.crystal }}-alpine
     steps:
     - uses: actions/checkout@v2
-    - name: Format
-      run: crystal tool format --check
     - name: Run tests
       run: crystal spec -v --error-trace
