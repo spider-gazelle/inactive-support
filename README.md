@@ -110,4 +110,25 @@ my_hash = {} of String => String
 my_hash = my_hash.presence || {"default" => "settings"}
 ```
 
+### `with_default`
 
+Provides `Hash(K,V).with_default`
+
+Creates a `Hash(K,V)` with a default for missing keys with the result of a yielded block.
+Includes a pun of `Hash(K,V).new(default_value : V, initial_capacity = nil)`
+
+```crystal
+require "inactive-support/with_default/hash"
+# or...
+# require "inactive-support/with_default"
+
+block_default = Hash(String, Array(Int32).with_default { ["bye"] }
+block_default.empty? # => true
+block_default["hello"] # => ["bye"]
+block_default["a"] == block_default["b"] # => false
+
+value_default = Hash(String, Array(Int32).with_default ["bye"]
+value_default.empty? # => true
+value_default["hello"] # => ["bye"]
+value_default["a"] == value_default["b"] # => true
+```
