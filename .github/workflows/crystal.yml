@@ -20,6 +20,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         stable: [true]
         crystal:
