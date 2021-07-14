@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-  workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1"
 
@@ -21,24 +20,23 @@ jobs:
 
   test:
     strategy:
-      fail-fast: false
       matrix:
-        experimental: [false]
+        stable: [true]
         crystal:
-          - latest
+          - 1.1.0
           - 1.0.0
           - 0.36.1
         include:
-          - experimental: true
+          - stable: false
             crystal: nightly
-    name: "crystal: ${{ matrix.crystal }}, unstable: ${{ matrix.experimental }}"
+    name: "crystal: ${{ matrix.crystal }}, stable: ${{ matrix.stable }}"
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.experimental }}
     container: crystallang/crystal:${{ matrix.crystal }}-alpine
+    continue-on-error: ${{ !matrix.stable }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Run tests
-      run: crystal spec -v --error-trace
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: crystal spec -v --error-trace
 
   publish:
     if: contains('refs/tags', github.ref)
