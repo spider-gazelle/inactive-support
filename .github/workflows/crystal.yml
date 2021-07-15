@@ -15,8 +15,6 @@ jobs:
         run: crystal tool format --check
       - name: Lint
         uses: crystal-ameba/github-action@v0.2.12
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
     strategy:
@@ -32,9 +30,11 @@ jobs:
             crystal: nightly
     name: "crystal: ${{ matrix.crystal }}, stable: ${{ matrix.stable }}"
     runs-on: ubuntu-latest
-    container: crystallang/crystal:${{ matrix.crystal }}-alpine
     continue-on-error: ${{ !matrix.stable }}
     steps:
+      - uses: oprypin/install-crystal@v1
+        with:
+          crystal: ${{ matrix.crystal }}
       - uses: actions/checkout@v2
       - name: Run tests
         run: crystal spec -v --error-trace
