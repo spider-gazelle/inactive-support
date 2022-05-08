@@ -1,5 +1,8 @@
 # Inactive Support
 
+[![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fspider-gazelle%2Finactive-support%2Fbadge&label=Tests&logo=none)](https://github.com/spider-gazelle/inactive-support/actions/workflows/crystal.yml)
+[![Documentation](https://img.shields.io/badge/Documentation-available-brightgreen.svg)](https://spider-gazelle.github.io/inactive-support)
+
 A collection of classes, modules, macros and standard library extensions to simplify common tasks in crystal-lang.
 
 Each tool is small, independent and generic.
