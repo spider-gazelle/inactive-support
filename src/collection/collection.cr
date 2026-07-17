@@ -159,7 +159,7 @@ module Collection(X, Y)
 
     def initialize(structure)
       @channel = Channel(T).new
-      spawn same_thread: true do
+      spawn do
         structure.each_pair { |item| @channel.send item }
         @channel.close
       end
